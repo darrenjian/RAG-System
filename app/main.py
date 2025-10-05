@@ -282,14 +282,24 @@ async def reset_database():
     """
     Reset the entire knowledge base
 
-    WARNING: This deletes all ingested documents!
+    WARNING: This deletes all ingested documents and uploaded files!
 
     Returns:
         Confirmation message
     """
     try:
+        # Clear vector database
         rag_pipeline.reset()
-        return {"message": "Database reset successfully"}
+
+        # Delete all uploaded PDF files
+        deleted_count = 0
+        if UPLOAD_DIR.exists():
+            for pdf_file in UPLOAD_DIR.glob("*.pdf"):
+                pdf_file.unlink()
+                deleted_count += 1
+
+        logger.info(f"Reset complete: cleared vector DB and deleted {deleted_count} files")
+        return {"message": f"Database reset successfully. Deleted {deleted_count} file(s)."}
     except Exception as e:
         logger.error(f"Error resetting database: {e}")
         raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")

@@ -79,6 +79,24 @@
             background: #5568d3;
         }
 
+        .reset-btn {
+            width: 100%;
+            padding: 12px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .reset-btn:hover {
+            background: #c82333;
+        }
+
         .upload-status {
             margin-top: 10px;
             font-size: 12px;
@@ -346,6 +364,7 @@
                     <input type="file" id="pdfInput" accept=".pdf" multiple />
                     <label for="pdfInput" class="file-input-label">Upload PDF(s)</label>
                 </div>
+                <button class="reset-btn" id="resetButton">Clear All Documents</button>
                 <div class="upload-status" id="uploadStatus"></div>
             </div>
 
@@ -445,6 +464,36 @@
                 document.getElementById('docCount').textContent = data.count;
             } catch (error) {
                 console.error('Failed to load documents:', error);
+            }
+        }
+
+        // Reset database
+        async function resetDatabase() {
+            if (!confirm('Are you sure you want to reset the database? This will delete all uploaded documents and their embeddings. This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/reset`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Reset failed');
+                }
+
+                const result = await response.json();
+
+                // Show success message
+                addMessage('assistant', result.message);
+
+                // Refresh stats and document list
+                loadStats();
+                loadDocuments();
+
+            } catch (error) {
+                console.error('Reset error:', error);
+                addMessage('assistant', 'Failed to reset database. Please try again.');
             }
         }
 
@@ -623,6 +672,7 @@
                 sendQuery();
             }
         });
+        document.getElementById('resetButton').addEventListener('click', resetDatabase);
 
         // Initialize
         loadStats();
