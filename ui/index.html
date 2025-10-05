@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG System - Chat Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #90d2c3 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #5568d3;
+        }
+
+        .upload-status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .documents-list {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .documents-list h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .document-item {
+            padding: 8px;
+            margin-bottom: 6px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .document-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #495057;
+        }
+
+        .document-size {
+            font-size: 11px;
+            color: #6c757d;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex-shrink: 0;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .no-documents {
+            color: #adb5bd;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: auto;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-width: 0;
+        }
+
+        .chat-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: scroll;
+            padding: 30px;
+            background: #ffffff;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.user {
+            align-items: flex-end;
+        }
+
+        .message.assistant {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-bubble {
+            background: #667eea;
+            color: white;
+        }
+
+        .message.assistant .message-bubble {
+            background: #f1f3f5;
+            color: #333;
+        }
+
+        .message-meta {
+            font-size: 11px;
+            color: #adb5bd;
+            margin-top: 5px;
+        }
+
+        .citations {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .citation {
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        .chat-input-area {
+            padding: 20px 30px;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #queryInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        #queryInput:focus {
+            border-color: #667eea;
+        }
+
+        #sendButton {
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #sendButton:hover {
+            background: #5568d3;
+        }
+
+        #sendButton:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            padding: 15px;
+            background: #f1f3f5;
+            border-radius: 15px;
+            color: #666;
+            max-width: 70%;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-dots {
+            display: inline-block;
+            animation: blink 1.4s infinite;
+        }
+
+        @keyframes blink {
+            0%, 20% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>RAG Assistant</h2>
+
+            <div class="upload-section">
+                <div class="file-input-wrapper">
+                    <input type="file" id="pdfInput" accept=".pdf" multiple />
+                    <label for="pdfInput" class="file-input-label">Upload PDF(s)</label>
+                </div>
+                <div class="upload-status" id="uploadStatus"></div>
+            </div>
+
+            <div class="documents-list" id="documentsList">
+                <h3>Uploaded Documents</h3>
+                <div id="documentsContainer">
+                    <div class="no-documents">No documents uploaded yet</div>
+                </div>
+            </div>
+
+            <div class="stats" id="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Status:</span>
+                    <span class="stat-value" id="status">Loading...</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Documents:</span>
+                    <span class="stat-value" id="docCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Chunks:</span>
+                    <span class="stat-value" id="chunkCount">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat-header">
+                <h1>Upload and Ask Questions About Your Documents</h1>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message assistant">
+                    <div class="message-bubble">
+                        Hello, I'm your RAG assistant! Upload your PDF documents and ask me anything about their content, I'll do my best to help you.
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="input-container">
+                    <input
+                        type="text"
+                        id="queryInput"
+                        placeholder="Ask a question about your documents..."
+                        autocomplete="off"
+                    />
+                    <button id="sendButton">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const chatMessages = document.getElementById('chatMessages');
+        const queryInput = document.getElementById('queryInput');
+        const sendButton = document.getElementById('sendButton');
+        const pdfInput = document.getElementById('pdfInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        // Load health stats
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                document.getElementById('status').textContent = data.status;
+                document.getElementById('docCount').textContent = data.total_documents;
+                document.getElementById('chunkCount').textContent = data.total_chunks;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+                document.getElementById('status').textContent = 'Error';
+            }
+        }
+
+        async function loadDocuments() {
+            try {
+                const response = await fetch(`${API_BASE}/documents`);
+                const data = await response.json();
+
+                const container = document.getElementById('documentsContainer');
+
+                if (data.documents.length === 0) {
+                    container.innerHTML = '<div class="no-documents">No documents uploaded yet</div>';
+                } else {
+                    container.innerHTML = data.documents.map(doc => `
+                        <div class="document-item">
+                            <span class="document-name" title="${doc.filename}">${doc.filename}</span>
+                            <span class="document-size">${doc.size_mb} MB</span>
+                            <button class="delete-btn" onclick="deleteDocument('${doc.filename}')">Delete</button>
+                        </div>
+                    `).join('');
+                }
+
+                // Update document count
+                document.getElementById('docCount').textContent = data.count;
+            } catch (error) {
+                console.error('Failed to load documents:', error);
+            }
+        }
+
+        // Delete document
+        async function deleteDocument(filename) {
+            if (!confirm(`Are you sure you want to delete "${filename}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/documents/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Delete failed');
+                }
+
+                const result = await response.json();
+
+                // Show success message
+                addMessage('assistant', result.message);
+
+                // Refresh stats and document list
+                loadStats();
+                loadDocuments();
+
+            } catch (error) {
+                console.error('Delete error:', error);
+                addMessage('assistant', `Failed to delete "${filename}". Please try again.`);
+            }
+        }
+
+        // Upload PDFs (supports multiple files)
+        pdfInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            uploadStatus.textContent = `Uploading ${files.length} file(s)...`;
+
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await fetch(`${API_BASE}/ingest`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Upload failed');
+                    }
+
+                    const result = await response.json();
+                    successCount++;
+
+                    // Add system message
+                    addMessage('assistant', `Document "${result.filename}" successfully ingested with ${result.chunks_created} chunks!`);
+                } catch (error) {
+                    failCount++;
+                    console.error(`Upload error for ${file.name}:`, error);
+                }
+            }
+
+            // Update status
+            if (failCount === 0) {
+                uploadStatus.textContent = `Success: ${successCount} file(s) uploaded`;
+            } else {
+                uploadStatus.textContent = `Uploaded ${successCount}, failed ${failCount}`;
+            }
+
+            // Refresh stats and document list
+            loadStats();
+            loadDocuments();
+
+            pdfInput.value = '';
+        });
+
+        // Send query
+        async function sendQuery() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            // Add user message
+            addMessage('user', query);
+            queryInput.value = '';
+
+            // Show loading
+            const loadingDiv = showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        top_k: 5,
+                        use_hybrid_search: true,
+                        enable_hallucination_check: false
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Query failed');
+                }
+
+                const result = await response.json();
+
+                // Remove loading
+                loadingDiv.remove();
+
+                // Add assistant message with citations
+                addMessage('assistant', result.answer, result.citations, result.processing_time_ms);
+
+            } catch (error) {
+                loadingDiv.remove();
+                addMessage('assistant', 'Sorry, there was an error processing your question.');
+                console.error('Query error:', error);
+            }
+        }
+
+        // Add message to chat
+        function addMessage(role, content, citations = [], processingTime = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            bubbleDiv.textContent = content;
+
+            messageDiv.appendChild(bubbleDiv);
+
+            // Add citations if present
+            if (citations && citations.length > 0) {
+                const citationsDiv = document.createElement('div');
+                citationsDiv.className = 'citations';
+                citationsDiv.innerHTML = '<strong>Sources:</strong><br>' +
+                    citations.map((c, i) =>
+                        `<div class="citation">[${i+1}] ${c.source_file} (similarity: ${(c.similarity_score * 100).toFixed(1)}%)</div>`
+                    ).join('');
+                bubbleDiv.appendChild(citationsDiv);
+            }
+
+            // Add metadata
+            if (processingTime) {
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'message-meta';
+                metaDiv.textContent = `Processed in ${processingTime.toFixed(0)}ms`;
+                messageDiv.appendChild(metaDiv);
+            }
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show loading indicator
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading active';
+            loadingDiv.innerHTML = 'Thinking<span class="loading-dots">...</span>';
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return loadingDiv;
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendQuery);
+        queryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendQuery();
+            }
+        });
+
+        // Initialize
+        loadStats();
+        loadDocuments();
+        setInterval(() => {
+            loadStats();
+            loadDocuments();
+        }, 10000); // Refresh stats and documents every 10s
+    </script>
+</body>
+</html>

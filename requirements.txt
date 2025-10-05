@@ -1,0 +1,23 @@
+# Web Framework
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+
+# Mistral AI
+mistralai==1.2.4
+
+# Data Processing
+numpy==1.26.4
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# PDF Processing (used by Mistral OCR)
+PyPDF2==3.0.1
+
+# Text Processing
+nltk==3.9.1
+scikit-learn==1.6.0
+
+# Utilities
+python-dotenv==1.0.1
+aiofiles==24.1.0
