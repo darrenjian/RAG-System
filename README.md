@@ -628,26 +628,18 @@ for i in range(0, len(tokens), chunk_size - overlap):
 2. **Short Sentences**: Filter out sentences < 10 characters (page numbers, headers)
 3. **Very Long Sentences**: Could split at commas/semicolons (not currently implemented)
 
----
+**Batching for Large Documents:**
 
-### Chunking Considerations Summary
+Large documents can generate hundreds of chunks, which can overwhelm the embedding API if sent all at once. We batch embeddings in groups of 100 to avoid API limits and timeouts:
 
-**Our Choices:**
-- PyPDF2 for text extraction (fast, free, sufficient for digital PDFs)
-- Sentence-based chunking (semantic coherence, precise citations)
-- NLTK for sentence tokenization (handles edge cases)
-- Filter sentences < 10 characters (remove noise)
+```python
+# Batch embeddings in groups of 100
+batch_size = 100
+embeddings = []
+for i in range(0, len(chunk_texts), batch_size):
+    batch = chunk_texts[i:i + batch_size]
+    batch_embeddings = await get_embeddings(batch)
+    embeddings.extend(batch_embeddings)
+```
 
-**Trade-offs Accepted:**
-- Cannot handle scanned PDFs (could add Mistral OCR fallback)
-- Many small chunks for long documents (acceptable for <100k chunks)
-- Requires NLTK dependency (lightweight, standard library)
-
-**Future Improvements:**
-- Add OCR fallback for scanned documents
-- Implement semantic chunking (split on topic changes)
-- Support multi-modal content (images, tables, charts)
-- Add chunk size limits for very long sentences
-
----
-
+**Issue Encountered**: Without batching, large documents (50+ pages, 300+ chunks) could fail during ingestion due to API request size limits or timeouts. Batching ensures reliable processing of documents of any size while providing progress feedback.

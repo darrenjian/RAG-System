@@ -101,10 +101,18 @@ class RAGPipeline:
             if not chunks:
                 raise ValueError("No chunks created from document")
 
-            # Step 3: Generate embeddings (batch)
+            # Step 3: Generate embeddings (batch in groups of 100 to avoid API limits)
             logger.debug(f"Generating embeddings for {len(chunks)} chunks...")
             chunk_texts = [text for _, text, _ in chunks]
-            embeddings = await self.mistral_client.get_embeddings(chunk_texts)
+
+            # Batch embeddings in groups of 100
+            batch_size = 100
+            embeddings = []
+            for i in range(0, len(chunk_texts), batch_size):
+                batch = chunk_texts[i:i + batch_size]
+                batch_embeddings = await self.mistral_client.get_embeddings(batch)
+                embeddings.extend(batch_embeddings)
+                logger.debug(f"Generated embeddings for batch {i//batch_size + 1}/{(len(chunk_texts) + batch_size - 1)//batch_size}")
 
             # Step 4: Store in vector DB
             logger.debug("Storing in vector database...")

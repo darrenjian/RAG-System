@@ -506,7 +506,7 @@
                     successCount++;
 
                     // Add system message
-                    addMessage('assistant', `Document "${result.filename}" successfully ingested with ${result.chunks_created} chunks!`);
+                    addMessage('assistant', `Document "${result.filename}" uploaded successfully`);
                 } catch (error) {
                     failCount++;
                     console.error(`Upload error for ${file.name}:`, error);
