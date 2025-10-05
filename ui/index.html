@@ -628,7 +628,17 @@
 
             const bubbleDiv = document.createElement('div');
             bubbleDiv.className = 'message-bubble';
-            bubbleDiv.textContent = content;
+
+            // Format the content
+            let formattedContent = content;
+
+            // Convert markdown-style bold (**text**) to HTML
+            formattedContent = formattedContent.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // Convert line breaks to <br>
+            formattedContent = formattedContent.replace(/\n/g, '<br>');
+
+            bubbleDiv.innerHTML = formattedContent;
 
             messageDiv.appendChild(bubbleDiv);
 
