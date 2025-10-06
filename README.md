@@ -1,6 +1,6 @@
-# RAG System
+# DocBot
 
-A production-ready **Retrieval-Augmented Generation (RAG)** pipeline for intelligent PDF document processing and question answering, built with FastAPI and Mistral AI.
+**DocBot** is a production-ready Retrieval-Augmented Generation (RAG) system for intelligent PDF document processing and question answering, built with FastAPI and Mistral AI.
 
 ## Features
 

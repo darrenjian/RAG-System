@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAG System - Chat Interface</title>
+    <title>DocBot - Document Q&A Assistant</title>
     <style>
         * {
             margin: 0;
@@ -108,7 +108,7 @@
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
-            max-height: 250px;
+            max-height: 400px;
             overflow-y: auto;
         }
 
@@ -357,7 +357,7 @@
 <body>
     <div class="container">
         <div class="sidebar">
-            <h2>RAG Assistant</h2>
+            <h2>DocBot: Your RAG Agent</h2>
 
             <div class="upload-section">
                 <div class="file-input-wrapper">
@@ -399,7 +399,7 @@
             <div class="chat-messages" id="chatMessages">
                 <div class="message assistant">
                     <div class="message-bubble">
-                        Hello, I'm your RAG assistant! Upload your PDF documents and ask me anything about their content, I'll do my best to help you.
+                        Hello, I'm DocBot, your personal RAG assistant! Upload your PDF documents and ask me anything about their content, I'll do my best to help you.
                     </div>
                 </div>
             </div>
@@ -455,7 +455,6 @@
                         <div class="document-item">
                             <span class="document-name" title="${doc.filename}">${doc.filename}</span>
                             <span class="document-size">${doc.size_mb} MB</span>
-                            <button class="delete-btn" onclick="deleteDocument('${doc.filename}')">Delete</button>
                         </div>
                     `).join('');
                 }
