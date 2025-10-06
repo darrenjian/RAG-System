@@ -135,7 +135,7 @@ The chat interface will be available at `http://localhost:8000`
 │          → Return top-5 results                                    │
 │      ↓                                                              │
 │  [5] Confidence Check                                               │
-│      → If top score < 0.70: "I don't have enough evidence"         │
+│      → If top score < 0.50: "I don't have enough evidence"         │
 │      ↓                                                              │
 │  [6] Answer Generation (Mistral LLM)                               │
 │      → Provide context + constraints                               │
@@ -193,7 +193,7 @@ When you ask a question:
    - **Combination**: Weighted merge (70% semantic, 30% keyword)
 
 4. **Confidence Filtering**: Checks if evidence is strong enough
-   - Threshold: 0.70 similarity score
+   - Threshold: 0.5 similarity score
    - Below threshold → Refuse to answer
 
 5. **Answer Generation**: LLM generates grounded response
@@ -436,7 +436,7 @@ PORT=8000
 CHUNK_SIZE=512              # Characters per chunk
 CHUNK_OVERLAP=128           # Overlap between chunks
 TOP_K_RESULTS=5             # Number of results to retrieve
-SIMILARITY_THRESHOLD=0.7    # Minimum similarity for answers
+SIMILARITY_THRESHOLD=0.5    # Minimum similarity for answers
 MAX_CONTEXT_LENGTH=4000     # Max context for LLM
 
 # Models
