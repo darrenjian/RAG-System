@@ -236,8 +236,8 @@ class RAGPipeline:
             is_summary_query = any(word in query.lower() for word in [
                 'summarize', 'summary', 'overview', 'list', 'all', 'document'
             ])
-            num_chunks = 10 if is_summary_query else 5
-            context_chunks = [r['text'] for r in results[:num_chunks]]  # Use top 5-10 for context
+            num_chunks = 10 if is_summary_query else 7 
+            context_chunks = [r['text'] for r in results[:num_chunks]]
             answer = await self.mistral_client.generate_answer(query, context_chunks)
 
             # Build citations

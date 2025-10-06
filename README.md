@@ -643,3 +643,15 @@ for i in range(0, len(chunk_texts), batch_size):
 ```
 
 **Issue Encountered**: Without batching, large documents (50+ pages, 300+ chunks) could fail during ingestion due to API request size limits or timeouts. Batching ensures reliable processing of documents of any size while providing progress feedback.
+
+**Query Sensitivity Issue - Similarity Threshold Too Strict:**
+
+The RAG system was extremely sensitive to minor phrasing variations:
+- "How do I file taxes for cooperatives?" → No results (score: 0.578)
+- "How do I file taxes for a cooperative?" → Works (score: 0.786)
+
+**Root Cause**: The default similarity threshold of 0.7 was too strict. Queries with good semantic matches (scores 0.5-0.7) were being rejected.
+
+**Solution**:
+1. Lowered `similarity_threshold` from 0.7 to 0.5 in both `app/config.py` and `.env` file. This improves recall (finds more relevant results) while still filtering out irrelevant content. The 0.5-0.7 range typically indicates semantically related content with different phrasing (e.g., singular vs plural forms).
+2. Increased context window from 5 to 7 chunks for regular queries (10 for summaries). More context helps the LLM generate more complete and accurate answers.

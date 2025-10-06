@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     top_k_results: int = 5
     top_n_semantic: int = 10  # Top N results from semantic search
     top_k_keyword: int = 10   # Top K results from keyword search
-    similarity_threshold: float = 0.7
+    similarity_threshold: float = 0.5  # Lowered from 0.7 to improve recall on varied phrasings
     max_context_length: int = 4000
 
     # Model Configuration
