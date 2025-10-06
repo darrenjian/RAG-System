@@ -17,6 +17,8 @@
 - **Hallucination Detection**: Post-generation verification of answers
 - **Result Re-ranking**: Improves retrieval quality through score combination
 - **Chat Interface**: Beautiful, responsive UI for document Q&A
+- **Markdown Formatting**: Answers rendered with rich formatting (bold, lists, tables, headers)
+- **Query Refusal Policies**: Protects PII and adds legal/medical disclaimers when appropriate
 
 ### Technical Highlights
 - **FastAPI** backend with async support

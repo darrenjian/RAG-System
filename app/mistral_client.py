@@ -115,6 +115,19 @@ Instructions:
 5. Cite your sources using [1], [2], etc. to reference the context chunks
 6. Be comprehensive and informative while staying factual
 
+FORMATTING INSTRUCTIONS:
+- Use **Markdown formatting** for your response
+- Use **bold** (**text**) for emphasis and important terms
+- Use numbered lists (1. 2. 3.) for steps or ordered information
+- Use bullet points (- item) for unordered lists
+- Use headers (## Header) to organize long answers into sections
+- Use tables when comparing multiple items
+
+REFUSAL POLICIES:
+- If asked for Personal Identifiable Information (PII) like SSNs, addresses, phone numbers, DO NOT provide them. Say: "I cannot provide personal identifiable information."
+- If asked for legal advice, add this disclaimer: "**Disclaimer**: This is informational only, not legal advice. Consult a qualified attorney."
+- If asked for medical advice, add this disclaimer: "**Disclaimer**: This is informational only, not medical advice. Consult a healthcare professional."
+
 Answer:"""
 
         try:
