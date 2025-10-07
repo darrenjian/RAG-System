@@ -64,6 +64,36 @@ RAG-System/
 | **Validation** | [Pydantic](https://docs.pydantic.dev/) | Type-safe models |
 | **Frontend** | Vanilla HTML/CSS/JS | Simple chat interface |
 
+### Design Assumptions
+
+This system was built with specific constraints and use cases in mind:
+
+**Dataset Assumptions:**
+- **Digital PDFs**: Documents with extractable text layers (not scanned/image-based)
+- **English Language**: NLTK sentence tokenization optimized for English
+- **Document Size**: Typical range 10-500 pages (~50-25,000 chunks)
+- **Content Type**: Text-heavy documents (reports, papers, articles) rather than form-heavy or image-heavy PDFs
+
+**Usage Assumptions:**
+- **Scale**: Small team or personal use (<10 concurrent users)
+- **Query Pattern**: Asynchronous, research-oriented queries (not real-time chat)
+- **Workload**: Read-heavy (many queries per ingested document)
+- **Deployment**: Single-machine deployment (no distributed system needed)
+
+**Technical Bounds:**
+- **Vector Count**: <100k vectors total (~500 documents of 200 chunks each)
+- **Memory**: Entire vector database fits in RAM (typically <2GB)
+- **API Limits**: Respects Mistral API rate limits (batching in groups of 100)
+- **Concurrent Users**: Designed for <100 simultaneous queries
+
+**Known Constraints:**
+- **No GPU**: Runs on CPU-only machines
+- **Stateless**: No conversation history across sessions
+- **Single Language**: No multilingual support
+- **Storage**: Local filesystem only (no cloud storage integration)
+
+These assumptions enable simplicity and educational value. For production systems with different requirements, see [Future Improvements](#future-improvements).
+
 ---
 
 ## System Architecture
@@ -184,6 +214,12 @@ RAG-System/
 - Built with NumPy for educational purposes
 - No external dependencies (Pinecone, Weaviate, etc.)
 - Sufficient for small-to-medium scale (<100k vectors)
+
+#### Batching for Large Documents
+- **Batch size of 100 chunks** to prevent API timeouts and rate limits
+- Enables reliable processing of large documents (1000+ chunks)
+- Provides progress feedback during ingestion
+- Prevents memory issues and network failures
 
 ### File Responsibilities
 
@@ -317,28 +353,24 @@ curl http://localhost:8000/health
 
 ## Future Improvements
 
-### Planned Enhancements
+### Top 5 Planned Enhancements
 
-- **Multi-modal support**: Extract and reason about images, tables, charts in PDFs
-- **Conversation memory**: Track context across multiple queries in a session
-- **Advanced chunking**: Semantic-aware chunking that respects sections/topics
-- **Query routing**: Route queries to different retrieval strategies based on intent
-- **User feedback loop**: Learn from user ratings to improve retrieval
-- **Production-grade vector DB**: Integrate Pinecone/Weaviate for scale
-- **Monitoring & logging**: Track performance metrics and error rates
-- **Docker containerization**: Easy deployment with Docker Compose
-- **Test coverage**: Unit and integration tests with pytest
+1. **Adaptive Similarity Threshold**: Automatically calibrate threshold based on document characteristics and query patterns (e.g., 0.6 for technical docs, 0.4 for general content)
+
+2. **Production-Grade Vector DB**: Integrate FAISS or Pinecone/Weaviate for scalability to millions of vectors with sub-millisecond search times
+
+3. **Multi-Modal PDF Understanding**: Extract and query tables, charts, and images using vision models for comprehensive document analysis
+
+4. **Conversation Memory**: Track context across queries within a session to enable multi-turn dialogue and follow-up questions
+
+5. **Testing & Production Readiness**: Comprehensive test suite, Docker containerization, CI/CD pipeline, and monitoring infrastructure
 
 ### Known Limitations
 
-- **Scanned PDFs**: PyPDF2 cannot extract text from image-based PDFs (need OCR)
-- **Complex layouts**: Multi-column layouts and tables may not parse perfectly
-- **Scale**: Custom vector DB is suitable for <100k vectors; larger datasets need dedicated solution
-- **Context window**: Limited to ~4000 characters of context for LLM generation
+- **Vector DB Scale**: Custom NumPy implementation is O(n) linear search; becomes slow beyond 100k vectors
+- **BM25 Index Scale**: Inverted index grows with vocabulary size; for millions of documents, dedicated search engine (Elasticsearch) would be needed
 - **No conversation state**: Each query is independent; no multi-turn dialogue tracking
-
-For detailed design rationale and trade-offs, see [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md).
 
 ---
 
-**Built with ❤️ by Darren Jian**
+**Built by Darren Jian**
