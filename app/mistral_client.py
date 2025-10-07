@@ -1,8 +1,7 @@
 """Client for Mistral AI's OCR, embeddings, and text generation."""
 
 import os
-import base64
-from typing import List, Dict
+from typing import List, Dict, Any
 from mistralai import Mistral
 import logging
 from app.config import get_settings
@@ -27,7 +26,10 @@ class MistralClient:
             raise ValueError("Mistral API key is required. Please set MISTRAL_API_KEY in .env file")
 
         # Log only the first/last 4 chars of the API key for security
-        masked_key = f"{self.api_key[:4]}...{self.api_key[-4:]}" if len(self.api_key) > 8 else "***"
+        if len(self.api_key) > 8:
+            masked_key = f"{self.api_key[:4]}...{self.api_key[-4:]}"
+        else:
+            masked_key = "***"
         logger.info(f"Initializing MistralClient with API key: {masked_key}")
 
         self.client = Mistral(api_key=self.api_key)
@@ -36,7 +38,7 @@ class MistralClient:
         self.llm_model = settings.llm_model
         self.ocr_model = settings.ocr_model
 
-        logger.info(f"Initialized MistralClient (embedding={self.embedding_model}, llm={self.llm_model})")
+        logger.info(f"Initialized MistralClient (embedding={self.embedding_model}, " f"llm={self.llm_model})")
 
     async def get_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
@@ -52,10 +54,7 @@ class MistralClient:
             return []
 
         try:
-            response = self.client.embeddings.create(
-                model=self.embedding_model,
-                inputs=texts
-            )
+            response = self.client.embeddings.create(model=self.embedding_model, inputs=texts)
 
             embeddings = [item.embedding for item in response.data]
             logger.debug(f"Generated {len(embeddings)} embeddings")
@@ -79,11 +78,7 @@ class MistralClient:
         return embeddings[0] if embeddings else []
 
     async def generate_answer(
-        self,
-        query: str,
-        context_chunks: List[str],
-        temperature: float = 0.3,
-        max_tokens: int = 1000
+        self, query: str, context_chunks: List[str], temperature: float = 0.3, max_tokens: int = 1000
     ) -> str:
         """
         Generate an answer using the LLM
@@ -110,8 +105,10 @@ User Question: {query}
 Instructions:
 1. Answer using information from the context above
 2. Synthesize information across multiple context chunks when needed
-3. If the context contains relevant information, provide a complete answer even if some details are missing
-4. Only say "I don't have enough information" if the context is completely unrelated to the question
+3. If the context contains relevant information, provide a complete answer even if some
+   details are missing
+4. Only say "I don't have enough information" if the context is completely unrelated to
+   the question
 5. Cite your sources using [1], [2], etc. to reference the context chunks
 6. Be comprehensive and informative while staying factual
 
@@ -124,20 +121,21 @@ FORMATTING INSTRUCTIONS:
 - Use tables when comparing multiple items
 
 REFUSAL POLICIES:
-- If asked for Personal Identifiable Information (PII) like SSNs, addresses, phone numbers, DO NOT provide them. Say: "I cannot provide personal identifiable information."
-- If asked for legal advice, add this disclaimer: "**Disclaimer**: This is informational only, not legal advice. Consult a qualified attorney."
-- If asked for medical advice, add this disclaimer: "**Disclaimer**: This is informational only, not medical advice. Consult a healthcare professional."
+- If asked for Personal Identifiable Information (PII) like SSNs, addresses, phone numbers,
+  DO NOT provide them. Say: "I cannot provide personal identifiable information."
+- If asked for legal advice, add this disclaimer: "**Disclaimer**: This is informational
+  only, not legal advice. Consult a qualified attorney."
+- If asked for medical advice, add this disclaimer: "**Disclaimer**: This is informational
+  only, not medical advice. Consult a healthcare professional."
 
 Answer:"""
 
         try:
             response = self.client.chat.complete(
                 model=self.llm_model,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
+                messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
             )
 
             answer = response.choices[0].message.content
@@ -170,10 +168,7 @@ Respond with only the category name, nothing else."""
 
         try:
             response = self.client.chat.complete(
-                model=self.llm_model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.0,
-                max_tokens=20
+                model=self.llm_model, messages=[{"role": "user", "content": prompt}], temperature=0.0, max_tokens=20
             )
 
             intent = response.choices[0].message.content.strip().lower()
@@ -211,10 +206,7 @@ Return only the improved query, nothing else."""
 
         try:
             response = self.client.chat.complete(
-                model=self.llm_model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-                max_tokens=100
+                model=self.llm_model, messages=[{"role": "user", "content": prompt}], temperature=0.3, max_tokens=100
             )
 
             transformed = response.choices[0].message.content.strip()
@@ -226,7 +218,7 @@ Return only the improved query, nothing else."""
             # Return original query if transformation fails
             return query
 
-    async def detect_hallucination(self, answer: str, context: List[str]) -> Dict[str, any]:
+    async def detect_hallucination(self, answer: str, context: List[str]) -> Dict[str, Any]:
         """
         Verify if the answer is supported by the context
 
@@ -254,23 +246,20 @@ Answer:"""
 
         try:
             response = self.client.chat.complete(
-                model=self.llm_model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.0,
-                max_tokens=20
+                model=self.llm_model, messages=[{"role": "user", "content": prompt}], temperature=0.0, max_tokens=20
             )
 
             result = response.choices[0].message.content.strip().upper()
 
             return {
-                'is_hallucination': result == 'UNSUPPORTED',
-                'verification_status': result,
-                'confidence': 1.0 if result == 'SUPPORTED' else 0.5 if result == 'PARTIAL' else 0.0
+                "is_hallucination": result == "UNSUPPORTED",
+                "verification_status": result,
+                "confidence": 1.0 if result == "SUPPORTED" else 0.5 if result == "PARTIAL" else 0.0,
             }
 
         except Exception as e:
             logger.error(f"Error detecting hallucination: {e}")
-            return {'is_hallucination': False, 'verification_status': 'UNKNOWN', 'confidence': 0.5}
+            return {"is_hallucination": False, "verification_status": "UNKNOWN", "confidence": 0.5}
 
     def process_pdf_ocr(self, pdf_path: str) -> str:
         """

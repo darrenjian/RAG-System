@@ -21,10 +21,4 @@ if __name__ == "__main__":
     print("=" * 60)
     print("\nPress Ctrl+C to stop\n")
 
-    uvicorn.run(
-        "app.main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("app.main:app", host=settings.host, port=settings.port, reload=True, log_level="info")

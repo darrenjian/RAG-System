@@ -2,8 +2,8 @@
 
 import math
 import re
-from typing import List, Dict, Set
-from collections import Counter, defaultdict
+from typing import List, Dict
+from collections import Counter
 import logging
 
 logger = logging.getLogger(__name__)
@@ -40,13 +40,8 @@ class BM25:
             documents: List of dicts with 'id', 'text', and 'metadata'
         """
         for doc in documents:
-            tokens = self._tokenize(doc['text'])
-            doc_entry = {
-                'id': doc['id'],
-                'text': doc['text'],
-                'tokens': tokens,
-                'metadata': doc.get('metadata', {})
-            }
+            tokens = self._tokenize(doc["text"])
+            doc_entry = {"id": doc["id"], "text": doc["text"], "tokens": tokens, "metadata": doc.get("metadata", {})}
             self.corpus.append(doc_entry)
             self.doc_len.append(len(tokens))
 
@@ -80,16 +75,11 @@ class BM25:
         scores = []
 
         for idx, doc in enumerate(self.corpus):
-            score = self._score(query_tokens, doc['tokens'], idx)
-            scores.append({
-                'id': doc['id'],
-                'text': doc['text'],
-                'metadata': doc['metadata'],
-                'bm25_score': score
-            })
+            score = self._score(query_tokens, doc["tokens"], idx)
+            scores.append({"id": doc["id"], "text": doc["text"], "metadata": doc["metadata"], "bm25_score": score})
 
         # Sort by score descending
-        scores.sort(key=lambda x: x['bm25_score'], reverse=True)
+        scores.sort(key=lambda x: x["bm25_score"], reverse=True)
 
         top_k = min(top_k, len(scores))
         results = scores[:top_k]
@@ -163,7 +153,7 @@ class BM25:
         text = text.lower()
 
         # Split on non-alphanumeric
-        tokens = re.findall(r'\b\w+\b', text)
+        tokens = re.findall(r"\b\w+\b", text)
 
         # Filter short tokens
         tokens = [t for t in tokens if len(t) > 2]
@@ -174,12 +164,7 @@ class BM25:
 class HybridSearch:
     """Blends vector similarity and keyword matching with weighted scoring."""
 
-    def __init__(
-        self,
-        vector_db,
-        semantic_weight: float = 0.7,
-        keyword_weight: float = 0.3
-    ):
+    def __init__(self, vector_db, semantic_weight: float = 0.7, keyword_weight: float = 0.3):
         """
         Initialize hybrid search
 
@@ -215,7 +200,7 @@ class HybridSearch:
         query_embedding: List[float],
         top_k: int = 5,
         top_n_semantic: int = 10,
-        top_k_keyword: int = 10
+        top_k_keyword: int = 10,
     ) -> List[Dict]:
         """
         Perform hybrid search
@@ -248,19 +233,18 @@ class HybridSearch:
         combined = self._combine_results(semantic_results, keyword_results)
 
         # Step 4: Sort by hybrid score (weighted combination)
-        combined.sort(key=lambda x: x['hybrid_score'], reverse=True)
+        combined.sort(key=lambda x: x["hybrid_score"], reverse=True)
 
         # Step 5: Return final top-k results
         results = combined[:top_k]
 
-        logger.info(f"Hybrid search: retrieved {len(semantic_results)} semantic + {len(keyword_results)} keyword → {len(results)} final results")
+        logger.info(
+            f"Hybrid search: retrieved {len(semantic_results)} semantic + "
+            f"{len(keyword_results)} keyword → {len(results)} final results"
+        )
         return results
 
-    def _combine_results(
-        self,
-        semantic_results: List[Dict],
-        keyword_results: List[Dict]
-    ) -> List[Dict]:
+    def _combine_results(self, semantic_results: List[Dict], keyword_results: List[Dict]) -> List[Dict]:
         """
         Combine and normalize scores from both search methods
 
@@ -272,32 +256,29 @@ class HybridSearch:
             Combined results with hybrid scores
         """
         # Normalize semantic scores (cosine similarity is already 0-1)
-        semantic_map = {r['id']: r for r in semantic_results}
+        semantic_map = {r["id"]: r for r in semantic_results}
 
         # Normalize BM25 scores to 0-1
-        max_bm25 = max([r['bm25_score'] for r in keyword_results], default=1.0)
+        max_bm25 = max([r["bm25_score"] for r in keyword_results], default=1.0)
         if max_bm25 > 0:
             for r in keyword_results:
-                r['normalized_bm25'] = r['bm25_score'] / max_bm25
+                r["normalized_bm25"] = r["bm25_score"] / max_bm25
         else:
             for r in keyword_results:
-                r['normalized_bm25'] = 0.0
+                r["normalized_bm25"] = 0.0
 
-        keyword_map = {r['id']: r for r in keyword_results}
+        keyword_map = {r["id"]: r for r in keyword_results}
 
         # Combine scores
         all_ids = set(semantic_map.keys()) | set(keyword_map.keys())
         combined = []
 
         for doc_id in all_ids:
-            semantic_score = semantic_map[doc_id]['similarity'] if doc_id in semantic_map else 0.0
-            keyword_score = keyword_map[doc_id]['normalized_bm25'] if doc_id in keyword_map else 0.0
+            semantic_score = semantic_map[doc_id]["similarity"] if doc_id in semantic_map else 0.0
+            keyword_score = keyword_map[doc_id]["normalized_bm25"] if doc_id in keyword_map else 0.0
 
             # Weighted combination
-            hybrid_score = (
-                self.semantic_weight * semantic_score +
-                self.keyword_weight * keyword_score
-            )
+            hybrid_score = self.semantic_weight * semantic_score + self.keyword_weight * keyword_score
 
             # Get document info (prefer semantic result if available)
             if doc_id in semantic_map:
@@ -305,9 +286,9 @@ class HybridSearch:
             else:
                 result = keyword_map[doc_id].copy()
 
-            result['hybrid_score'] = hybrid_score
-            result['semantic_score'] = semantic_score
-            result['keyword_score'] = keyword_score
+            result["hybrid_score"] = hybrid_score
+            result["semantic_score"] = semantic_score
+            result["keyword_score"] = keyword_score
 
             combined.append(result)
 

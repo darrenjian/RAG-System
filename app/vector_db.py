@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class VectorEntry:
     """A single entry in the vector database"""
+
     id: str
     vector: np.ndarray
     text: str
@@ -131,12 +132,14 @@ class VectorDatabase:
             idx = int(idx)  # Convert numpy int to Python int
             if similarities[idx] == -np.inf:  # Skip filtered out results
                 continue
-            results.append({
-                'id': self.ids[idx],
-                'text': self.texts[idx],
-                'metadata': self.metadata[idx],
-                'similarity': float(similarities[idx])
-            })
+            results.append(
+                {
+                    "id": self.ids[idx],
+                    "text": self.texts[idx],
+                    "metadata": self.metadata[idx],
+                    "similarity": float(similarities[idx]),
+                }
+            )
 
         logger.debug(f"Search returned {len(results)} results")
         return results
@@ -171,12 +174,7 @@ class VectorDatabase:
             return None
 
         idx = self.ids.index(id)
-        return VectorEntry(
-            id=id,
-            vector=self.vectors[idx],
-            text=self.texts[idx],
-            metadata=self.metadata[idx]
-        )
+        return VectorEntry(id=id, vector=self.vectors[idx], text=self.texts[idx], metadata=self.metadata[idx])
 
     def size(self) -> int:
         """Return the number of vectors in the database"""
@@ -200,14 +198,14 @@ class VectorDatabase:
         save_path = os.path.join(self.storage_path, f"{name}.pkl")
 
         data = {
-            'dimension': self.dimension,
-            'vectors': self.vectors,
-            'ids': self.ids,
-            'texts': self.texts,
-            'metadata': self.metadata
+            "dimension": self.dimension,
+            "vectors": self.vectors,
+            "ids": self.ids,
+            "texts": self.texts,
+            "metadata": self.metadata,
         }
 
-        with open(save_path, 'wb') as f:
+        with open(save_path, "wb") as f:
             pickle.dump(data, f)
 
         logger.info(f"Saved database to {save_path} ({len(self.ids)} vectors)")
@@ -228,14 +226,14 @@ class VectorDatabase:
             logger.warning(f"Database file not found: {load_path}")
             return False
 
-        with open(load_path, 'rb') as f:
+        with open(load_path, "rb") as f:
             data = pickle.load(f)
 
-        self.dimension = data['dimension']
-        self.vectors = data['vectors']
-        self.ids = data['ids']
-        self.texts = data['texts']
-        self.metadata = data['metadata']
+        self.dimension = data["dimension"]
+        self.vectors = data["vectors"]
+        self.ids = data["ids"]
+        self.texts = data["texts"]
+        self.metadata = data["metadata"]
 
         logger.info(f"Loaded database from {load_path} ({len(self.ids)} vectors)")
         return True
@@ -256,9 +254,9 @@ class VectorDatabase:
     def get_statistics(self) -> Dict:
         """Get database statistics"""
         return {
-            'total_vectors': len(self.ids),
-            'dimension': self.dimension,
-            'storage_path': self.storage_path,
-            'unique_sources': len(set(m.get('source_file', '') for m in self.metadata)),
-            'memory_usage_mb': self.vectors.nbytes / (1024 * 1024)
+            "total_vectors": len(self.ids),
+            "dimension": self.dimension,
+            "storage_path": self.storage_path,
+            "unique_sources": len(set(m.get("source_file", "") for m in self.metadata)),
+            "memory_usage_mb": self.vectors.nbytes / (1024 * 1024),
         }

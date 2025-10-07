@@ -7,14 +7,14 @@ import nltk
 
 # Download required NLTK data
 try:
-    nltk.data.find('tokenizers/punkt_tab')
+    nltk.data.find("tokenizers/punkt_tab")
 except LookupError:
-    nltk.download('punkt_tab', quiet=True)
+    nltk.download("punkt_tab", quiet=True)
 
 try:
-    nltk.data.find('tokenizers/punkt')
+    nltk.data.find("tokenizers/punkt")
 except LookupError:
-    nltk.download('punkt', quiet=True)
+    nltk.download("punkt", quiet=True)
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class TextChunker:
         """
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-        logger.info(f"Initialized TextChunker (sentence-based mode)")
+        logger.info("Initialized TextChunker (sentence-based mode)")
 
     def chunk(self, text: str, metadata: dict = None) -> List[Tuple[str, dict]]:
         """
@@ -56,6 +56,7 @@ class TextChunker:
 
         # Split into sentences using NLTK
         from nltk.tokenize import sent_tokenize
+
         sentences = sent_tokenize(text)
 
         chunks = []
@@ -66,11 +67,7 @@ class TextChunker:
 
             # Build chunk metadata
             chunk_metadata = metadata.copy() if metadata else {}
-            chunk_metadata.update({
-                'chunk_index': idx,
-                'chunk_type': 'sentence',
-                'sentence_length': len(sentence)
-            })
+            chunk_metadata.update({"chunk_index": idx, "chunk_type": "sentence", "sentence_length": len(sentence)})
 
             chunks.append((sentence, chunk_metadata))
 
@@ -108,12 +105,12 @@ class TextChunker:
         - Remove control characters
         """
         # Remove control characters except newlines and tabs
-        text = ''.join(char for char in text if char.isprintable() or char in '\n\t')
+        text = "".join(char for char in text if char.isprintable() or char in "\n\t")
 
         # Normalize whitespace
-        text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)  # Multiple newlines -> double newline
-        text = re.sub(r' +', ' ', text)  # Multiple spaces -> single space
-        text = re.sub(r'\t+', ' ', text)  # Tabs -> space
+        text = re.sub(r"\n\s*\n\s*\n+", "\n\n", text)  # Multiple newlines -> double newline
+        text = re.sub(r" +", " ", text)  # Multiple spaces -> single space
+        text = re.sub(r"\t+", " ", text)  # Tabs -> space
 
         return text.strip()
 
@@ -147,9 +144,9 @@ class SemanticChunker:
             # Check if adding this paragraph would exceed max size
             if current_size + para_size > self.max_chunk_size and current_chunk:
                 # Save current chunk
-                chunk_text = '\n\n'.join(current_chunk)
+                chunk_text = "\n\n".join(current_chunk)
                 chunk_meta = metadata.copy() if metadata else {}
-                chunk_meta['chunk_index'] = len(chunks)
+                chunk_meta["chunk_index"] = len(chunks)
                 chunks.append((chunk_text, chunk_meta))
 
                 # Start new chunk
@@ -161,9 +158,9 @@ class SemanticChunker:
 
         # Add remaining chunk
         if current_chunk:
-            chunk_text = '\n\n'.join(current_chunk)
+            chunk_text = "\n\n".join(current_chunk)
             chunk_meta = metadata.copy() if metadata else {}
-            chunk_meta['chunk_index'] = len(chunks)
+            chunk_meta["chunk_index"] = len(chunks)
             chunks.append((chunk_text, chunk_meta))
 
         logger.debug(f"Created {len(chunks)} semantic chunks")
@@ -173,7 +170,7 @@ class SemanticChunker:
     def _split_paragraphs(text: str) -> List[str]:
         """Split text into paragraphs"""
         # Split on double newlines or more
-        paragraphs = re.split(r'\n\s*\n+', text)
+        paragraphs = re.split(r"\n\s*\n+", text)
         # Filter out empty paragraphs
         return [p.strip() for p in paragraphs if p.strip()]
 

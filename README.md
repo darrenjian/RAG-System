@@ -1,77 +1,74 @@
 # DocBot
 
-**DocBot** is a production-ready Retrieval-Augmented Generation (RAG) system for intelligent PDF document processing and question answering, built with FastAPI and Mistral AI.
-
-## Features
-
-### Core Functionality
-- **PDF Ingestion**: Upload PDFs with OCR-powered text extraction (Mistral OCR)
-- **Semantic Search**: Custom vector database implementation (no external dependencies)
-- **Hybrid Search**: Combines semantic (embeddings) + keyword (BM25) search
-- **LLM Generation**: Context-aware answer generation with Mistral AI
-- **Citation System**: Confidence thresholds and source attribution
-
-### Additional Features
-- **Intent Detection**: Automatically classifies query types (greeting, factual, etc.)
-- **Query Transformation**: Enhances queries for better retrieval
-- **Hallucination Detection**: Post-generation verification of answers
-- **Result Re-ranking**: Improves retrieval quality through score combination
-- **Chat Interface**: Beautiful, responsive UI for document Q&A
-- **Markdown Formatting**: Answers rendered with rich formatting (bold, lists, tables, headers)
-- **Query Refusal Policies**: Protects PII and adds legal/medical disclaimers when appropriate
-
-### Technical Highlights
-- **FastAPI** backend with async support
-- **Custom Vector DB** - no third-party vector databases used
-- **BM25 Algorithm** - implemented from scratch for keyword search
-- **Smart Chunking** - preserves semantic boundaries
-- **Type Safety** - Pydantic models throughout
+**DocBot** is a Retrieval-Augmented Generation (RAG) system for intelligent PDF document processing and question answering. Built with FastAPI and Mistral AI, it combines semantic search, keyword matching, and advanced LLM capabilities to provide accurate, cited answers from your documents.
 
 ---
 
 ## Table of Contents
-- [Quick Start](#quick-start)
-- [System Architecture](#system-architecture)
-- [Installation](#installation)
-- [Usage](#usage)
-- [API Documentation](#api-documentation)
-- [Configuration](#configuration)
-- [Design Decisions](#design-decisions)
-- [Development](#development)
+1. [General Overview](#general-overview)
+2. [System Architecture](#system-architecture)
+3. [Setup and Usage](#setup-and-usage)
+4. [Future Improvements](#future-improvements)
 
 ---
 
-## Quick Start
+## General Overview
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/darrenjian/RAG-System.git
-cd RAG-System
+**Built by**: Darren Jian
+**Contact**: darrenjian28@gmail.com
 
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+### Codebase Structure
 
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Set up environment variables
-cp .env.example .env
-# Edit .env with your Mistral API key
-
-# 5. Run the server
-python -m uvicorn app.main:app --reload
-
-# 6. Open browser to http://localhost:8000
+```
+RAG-System/
+├── app/
+│   ├── main.py              # FastAPI endpoints and server configuration
+│   ├── rag_pipeline.py      # Orchestrates ingestion and query workflows
+│   ├── vector_db.py         # Custom vector database with cosine similarity
+│   ├── mistral_client.py    # Mistral API client (OCR, embeddings, LLM)
+│   ├── search.py            # Hybrid search (semantic + BM25 keyword)
+│   ├── chunking.py          # Sentence-based text chunking with NLTK
+│   ├── models.py            # Pydantic request/response models
+│   └── config.py            # Configuration management
+├── ui/
+│   └── index.html           # Chat interface for document Q&A
+├── vectordb/                # Persisted vector database (created at runtime)
+├── uploads/                 # Uploaded PDFs (created at runtime)
+├── requirements.txt         # Python dependencies
+├── .env                     # Environment variables (API keys)
+└── DESIGN_DECISIONS.md      # Detailed architecture documentation
 ```
 
-The chat interface will be available at `http://localhost:8000`
+### Core Features
+
+- **PDF Ingestion**: Upload PDFs with text extraction via PyPDF2
+- **Hybrid Search**: Combines semantic search (embeddings) + keyword search (BM25)
+- **LLM Generation**: Context-aware answer generation with citations
+- **Intent Detection**: Classifies queries to optimize API usage
+- **Query Transformation**: Enhances queries for better retrieval
+- **Hallucination Detection**: Verifies answers against source documents
+- **Confidence Filtering**: Only answers when evidence threshold is met
+- **Rich Formatting**: Markdown-rendered answers with bold, lists, tables
+
+### Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Backend** | [FastAPI](https://fastapi.tiangolo.com/) | Async API server with auto-docs |
+| **Server** | [Uvicorn](https://www.uvicorn.org/) | ASGI server |
+| **LLM/Embeddings** | [Mistral AI](https://mistral.ai/) | Text extraction, embeddings, generation |
+| **Vector Database** | Custom ([NumPy](https://numpy.org/)) | Cosine similarity search |
+| **Keyword Search** | BM25 (custom) | Exact term matching |
+| **Text Processing** | [NLTK](https://www.nltk.org/) | Sentence tokenization |
+| **PDF Extraction** | [PyPDF2](https://pypdf2.readthedocs.io/) | Digital PDF text extraction |
+| **Validation** | [Pydantic](https://docs.pydantic.dev/) | Type-safe models |
+| **Frontend** | Vanilla HTML/CSS/JS | Simple chat interface |
 
 ---
 
 ## System Architecture
 
-### High-Level Overview
+### RAG Pipeline Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -85,22 +82,22 @@ The chat interface will be available at `http://localhost:8000`
 │  User uploads PDF                                                   │
 │      ↓                                                              │
 │  [1] PDF Text Extraction (PyPDF2)                                  │
-│      → Extract text page-by-page                                   │
+│      → Extract text page-by-page from digital PDFs                 │
 │      ↓                                                              │
 │  [2] Text Chunking (Sentence-based)                                │
-│      → Split into semantic units using NLTK                        │
-│      → ~200 chunks for 39-page document                            │
+│      → Split into sentences using NLTK                             │
+│      → Preserves semantic boundaries                               │
 │      ↓                                                              │
 │  [3] Embedding Generation (Mistral API)                            │
-│      → Convert all chunks to embeddings                            │
-│      → 1024-dimensional vectors                                     │
+│      → Convert chunks to 1024-dimensional vectors                  │
+│      → Batched in groups of 100 for large documents               │
 │      ↓                                                              │
 │  [4] Vector Database Storage                                        │
-│      → Store vectors + metadata                                    │
+│      → Store vectors with metadata                                 │
 │      → Index for BM25 keyword search                               │
 │      ↓                                                              │
 │  [5] Persist to Disk                                                │
-│      → Save vectordb/ for future queries                           │
+│      → Save to vectordb/ for future queries                        │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 
@@ -112,23 +109,23 @@ The chat interface will be available at `http://localhost:8000`
 │      ↓                                                              │
 │  [1] Intent Detection (Mistral LLM)                                │
 │      → Classify: greeting, chitchat, factual, retrieval_needed     │
-│      → Skip retrieval for greetings                                │
+│      → Skip retrieval for greetings (faster, cheaper)              │
 │      ↓                                                              │
 │  [2] Query Transformation (Mistral LLM)                            │
 │      → Expand abbreviations, add synonyms                          │
-│      → "Q4 revenue" → "fourth quarter revenue earnings"            │
+│      → Example: "ML" → "machine learning"                          │
 │      ↓                                                              │
 │  [3] Query Embedding (Mistral API)                                 │
 │      → Convert enhanced query to vector                            │
 │      ↓                                                              │
 │  [4] Hybrid Search                                                  │
 │      ├─ Semantic Search (Cosine Similarity)                        │
-│      │   → Find top-10 similar vectors                             │
+│      │   → Find top-10 semantically similar chunks                 │
 │      │   → Score: 0.0 to 1.0                                       │
 │      │                                                              │
 │      ├─ Keyword Search (BM25)                                       │
 │      │   → Find top-10 by keyword matching                         │
-│      │   → Score: TF-IDF based                                     │
+│      │   → TF-IDF based scoring                                    │
 │      │                                                              │
 │      └─ Combine & Re-rank                                          │
 │          → Hybrid score = 0.7×semantic + 0.3×keyword               │
@@ -138,11 +135,11 @@ The chat interface will be available at `http://localhost:8000`
 │      → If top score < 0.50: "I don't have enough evidence"         │
 │      ↓                                                              │
 │  [6] Answer Generation (Mistral LLM)                               │
-│      → Provide context + constraints                               │
-│      → Generate grounded answer with citations                     │
+│      → Provide retrieved context + strict constraints              │
+│      → Generate answer with source citations [1][2]                │
 │      ↓                                                              │
 │  [7] Hallucination Detection (Optional)                            │
-│      → Verify answer against context                               │
+│      → Verify answer is supported by context                       │
 │      → Override if unsupported claims detected                     │
 │      ↓                                                              │
 │  [8] Return Response                                                │
@@ -153,123 +150,79 @@ The chat interface will be available at `http://localhost:8000`
 
 ### How It Works
 
-#### 1. **Document Ingestion**
+#### Ingestion Phase
 
-When you upload a PDF:
+1. **PDF Text Extraction**: PyPDF2 extracts text from digital PDFs page-by-page
+2. **Sentence-Based Chunking**: NLTK splits text into sentences, preserving semantic boundaries for precise retrieval
+3. **Embedding Generation**: Mistral API converts each sentence to a 1024-dimensional vector
+4. **Dual Indexing**: Stores vectors for semantic search + builds BM25 index for keyword search
+5. **Persistence**: Saves to disk for fast querying
 
-1. **Text Extraction**: PyPDF2 extracts text from each page
-   - Fast and free for digital PDFs
-   - Falls back to Mistral OCR for scanned documents
+#### Query Phase
 
-2. **Chunking**: Splits text into sentences using NLTK
-   - Preserves semantic boundaries
-   - Each sentence becomes a searchable unit
-   - Tracks metadata (source file, chunk index)
+1. **Intent Detection**: LLM classifies query type to skip retrieval for greetings (saves API calls)
+2. **Query Enhancement**: LLM expands abbreviations and adds synonyms for better matching
+3. **Hybrid Search**: Combines semantic similarity (finds conceptually related content) with BM25 keyword matching (finds exact terms)
+4. **Re-ranking**: Weighted combination (70% semantic, 30% keyword) produces final top-5 results
+5. **Confidence Filtering**: Only generates answers when similarity threshold (0.5) is met
+6. **Answer Generation**: LLM generates grounded response with citations using retrieved context
+7. **Verification**: Optional hallucination check ensures answer is supported by source documents
 
-3. **Embedding**: Converts chunks to vectors via Mistral API
-   - Generates embeddings for all chunks
-   - 1024-dimensional vectors capture semantic meaning
+### Key Design Strategies
 
-4. **Storage**: Saves to custom vector database
-   - NumPy-based cosine similarity search
-   - Also indexes for BM25 keyword search
-   - Persists to disk for future queries
+#### Text Chunking
+- **Sentence-based** (not fixed-size) to preserve semantic coherence
+- Each sentence becomes a searchable unit with exact citations
+- Filters out very short sentences (< 10 chars) to reduce noise
 
-#### 2. **Query Processing**
+#### Hybrid Search
+- **Semantic search** captures conceptual similarity (good for paraphrases)
+- **Keyword search** finds exact term matches (good for specific codes/names)
+- **Combination** leverages strengths of both approaches
 
-When you ask a question:
+#### Custom Vector Database
+- Built with NumPy for educational purposes
+- No external dependencies (Pinecone, Weaviate, etc.)
+- Sufficient for small-to-medium scale (<100k vectors)
 
-1. **Intent Detection**: LLM classifies query intent
-   - Greetings → Skip retrieval, respond directly
-   - Factual queries → Proceed with search
+### File Responsibilities
 
-2. **Query Enhancement**: LLM improves query
-   - Expands abbreviations: "ML" → "machine learning"
-   - Adds synonyms: "profit" → "profit earnings income"
+| File | Purpose |
+|------|---------|
+| `main.py` | FastAPI app with endpoints: `/ingest`, `/query`, `/health`, `/stats`, `/reset` |
+| `rag_pipeline.py` | Orchestrates ingestion workflow and query processing pipeline |
+| `vector_db.py` | In-memory vector database with cosine similarity search |
+| `mistral_client.py` | Wraps Mistral API for OCR, embeddings, LLM generation, intent classification |
+| `search.py` | Implements BM25 keyword search and hybrid search re-ranking |
+| `chunking.py` | Sentence-based text chunking using NLTK tokenizer |
+| `models.py` | Pydantic models for request/response validation |
+| `config.py` | Settings loaded from `.env` (API keys) and hardcoded configs |
 
-3. **Hybrid Search**: Two-pronged retrieval
-   - **Semantic**: Vector similarity finds conceptually similar chunks
-   - **Keyword**: BM25 finds exact keyword matches
-   - **Combination**: Weighted merge (70% semantic, 30% keyword)
+### API Endpoints
 
-4. **Confidence Filtering**: Checks if evidence is strong enough
-   - Threshold: 0.5 similarity score
-   - Below threshold → Refuse to answer
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Serve chat UI |
+| `/health` | GET | System health and statistics |
+| `/ingest` | POST | Upload and process PDF |
+| `/query` | POST | Query knowledge base |
+| `/stats` | GET | Detailed system statistics |
+| `/reset` | POST | Clear all data (destructive) |
+| `/documents` | GET | List uploaded PDFs |
+| `/documents/{filename}` | DELETE | Delete specific PDF |
 
-5. **Answer Generation**: LLM generates grounded response
-   - Provides retrieved context as evidence
-   - Enforces constraints: "Only use provided context"
-   - Includes citations with source attribution
-
-6. **Verification**: Optional hallucination check
-   - Verifies answer against source documents
-   - Overrides if unsupported claims detected
-
-### Technology Stack
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Backend** | [FastAPI](https://fastapi.tiangolo.com/) | Async API server with auto-docs |
-| **Server** | [Uvicorn](https://www.uvicorn.org/) | ASGI server for FastAPI |
-| **LLM/Embeddings** | [Mistral AI](https://mistral.ai/) | OCR, embeddings, answer generation |
-| **Vector DB** | Custom ([NumPy](https://numpy.org/)) | Cosine similarity search |
-| **Keyword Search** | BM25 (custom implementation) | Exact term matching |
-| **Text Processing** | [NLTK](https://www.nltk.org/) | Sentence tokenization |
-| **PDF Extraction** | [PyPDF2](https://pypdf2.readthedocs.io/) | Text extraction from PDFs |
-| **Data Validation** | [Pydantic](https://docs.pydantic.dev/) | Request/response models |
-| **Environment** | [python-dotenv](https://github.com/theskumar/python-dotenv) | Configuration management |
-| **Frontend** | HTML/CSS/JavaScript | Chat interface (vanilla, no framework) |
-
-### Key Design Choices
-
-1. **Why Custom Vector DB?**
-   - Educational: Understand how vector search works
-   - No dependencies: Complete control
-   - Sufficient for small-medium scale (<100k vectors)
-
-2. **Why Hybrid Search?**
-   - Semantic search: Good for conceptual queries
-   - Keyword search: Good for exact terms/codes
-   - Hybrid: Best of both worlds
-
-3. **Why Sentence-Based Chunking?**
-   - Preserves semantic boundaries
-   - Enables precise citations
-   - Better than fixed-size (which splits mid-sentence)
-
-4. **Why Intent Detection?**
-   - Saves API costs (skip retrieval for greetings)
-   - Improves UX (instant responses)
-   - Reduces latency (~50ms vs ~2000ms)
-
-### File Structure
-
-```
-RAG-System/
-├── app/
-│   ├── main.py              # FastAPI endpoints (/ingest, /query, /health)
-│   ├── rag_pipeline.py      # Orchestrates ingestion & query flow
-│   ├── vector_db.py         # Custom vector database (cosine similarity)
-│   ├── mistral_client.py    # Mistral API wrapper (OCR, embeddings, LLM)
-│   ├── search.py            # Hybrid search (semantic + BM25)
-│   ├── chunking.py          # Text chunking (sentence-based)
-│   ├── models.py            # Pydantic request/response models
-│   └── config.py            # Environment variable configuration
-├── ui/
-│   └── index.html           # Chat interface (upload PDFs, ask questions)
-├── vectordb/                # Persisted vector database (created at runtime)
-└── uploads/                 # Uploaded PDFs (created at runtime)
-```
+**Interactive API Documentation**: `http://localhost:8000/docs`
 
 ---
 
-## Installation
+## Setup and Usage
 
 ### Prerequisites
-- Python 3.9 or higher
-- Mistral API key ([get one here](https://console.mistral.ai/))
 
-### Step-by-Step Installation
+- **Python 3.9+**
+- **Mistral API key** ([get one here](https://console.mistral.ai/))
+
+### Installation
 
 1. **Clone the repository**
    ```bash
@@ -277,10 +230,10 @@ RAG-System/
    cd RAG-System
    ```
 
-2. **Create a virtual environment**
+2. **Create virtual environment**
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate  # Windows: venv\Scripts\activate
    ```
 
 3. **Install dependencies**
@@ -288,372 +241,104 @@ RAG-System/
    pip install -r requirements.txt
    ```
 
-4. **Configure environment variables**
+### Configuration
+
+1. **Create environment file**
    ```bash
    cp .env.example .env
    ```
 
-   Edit `.env` and add your Mistral API key:
+2. **Add your Mistral API key**
+
+   Edit `.env`:
    ```
    MISTRAL_API_KEY=your_api_key_here
    ```
 
-5. **Verify installation**
-   ```bash
-   python -c "import app; print('Installation successful!')"
-   ```
+3. **Customize model configurations** (optional)
 
----
+   Edit `app/config.py` to adjust:
+   - Model selection (`embedding_model`, `llm_model`, `ocr_model`)
+   - RAG parameters (`chunk_size`, `top_k_results`, `similarity_threshold`)
+   - Hybrid search weights (`semantic_weight`, `keyword_weight`)
 
-## Usage
+### Running the Server
 
-### Starting the Server
-
+**Development mode** (auto-reload on file changes):
 ```bash
-# Development mode (auto-reload)
-python -m uvicorn app.main:app --reload
+python run.py
+```
 
-# Production mode
+**Production mode**:
+```bash
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-The server will start at `http://localhost:8000`
+Server starts at: `http://localhost:8000`
 
 ### Using the Chat Interface
 
 1. Open `http://localhost:8000` in your browser
-2. Upload a PDF document using the sidebar
-3. Wait for processing (you'll see a confirmation message)
-4. Ask questions about the document!
+2. Click **"Upload PDF"** in the sidebar
+3. Select a PDF file (digital PDFs work best)
+4. Wait for processing confirmation
+5. Ask questions about the document!
+
+**Example queries:**
+- "What is this document about?"
+- "Summarize the key findings"
+- "What were the Q4 revenue numbers?"
 
 ### Using the API Directly
 
-#### Upload a PDF
+**Upload a PDF:**
 ```bash
 curl -X POST "http://localhost:8000/ingest" \
-  -F "file=@your_document.pdf"
+  -F "file=@document.pdf"
 ```
 
-#### Query the knowledge base
+**Query the knowledge base:**
 ```bash
 curl -X POST "http://localhost:8000/query" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What is the main topic of the document?",
+    "query": "What is the main topic?",
     "top_k": 5,
     "use_hybrid_search": true
   }'
 ```
 
-#### Health check
+**Check system health:**
 ```bash
 curl http://localhost:8000/health
 ```
 
 ---
 
-## API Documentation
-
-Once the server is running, visit:
-- **Interactive API docs**: `http://localhost:8000/docs`
-- **ReDoc documentation**: `http://localhost:8000/redoc`
-
-### Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Serve chat UI |
-| `/health` | GET | System health and statistics |
-| `/ingest` | POST | Upload and process PDF |
-| `/query` | POST | Query the knowledge base |
-| `/stats` | GET | Detailed system statistics |
-| `/reset` | POST | Clear all data (WARNING: destructive) |
-
-### Request/Response Examples
-
-**Ingestion Request:**
-```json
-POST /ingest
-Content-Type: multipart/form-data
-
-file: <PDF file>
-```
-
-**Ingestion Response:**
-```json
-{
-  "message": "Document ingested successfully",
-  "filename": "example.pdf",
-  "chunks_created": 42,
-  "processing_time_ms": 3542.1
-}
-```
-
-**Query Request:**
-```json
-POST /query
-{
-  "query": "What is the revenue in Q4?",
-  "top_k": 5,
-  "use_hybrid_search": true
-}
-```
-
-**Query Response:**
-```json
-{
-  "answer": "The Q4 revenue was $1.2 billion, representing a 15% increase year-over-year [1][2]",
-  "citations": [
-    {
-      "source_file": "annual_report.pdf",
-      "page_number": 5,
-      "chunk_id": "annual_report.pdf_chunk_12",
-      "similarity_score": 0.89,
-      "text_snippet": "Q4 revenue reached $1.2B..."
-    }
-  ],
-  "intent": "factual",
-  "confidence": 0.89,
-  "processing_time_ms": 1247.3
-}
-```
-
----
-
-## Configuration
-
-Configuration is managed through environment variables (`.env` file):
-
-```bash
-# Mistral API
-MISTRAL_API_KEY=your_key_here
-
-# Server
-HOST=0.0.0.0
-PORT=8000
-
-# RAG Parameters
-CHUNK_SIZE=512              # Characters per chunk
-CHUNK_OVERLAP=128           # Overlap between chunks
-TOP_K_RESULTS=5             # Number of results to retrieve
-SIMILARITY_THRESHOLD=0.5    # Minimum similarity for answers
-MAX_CONTEXT_LENGTH=4000     # Max context for LLM
-
-# Models
-EMBEDDING_MODEL=mistral-embed
-LLM_MODEL=mistral-small-latest
-OCR_MODEL=mistral-ocr-latest
-
-# Hybrid Search Weights
-SEMANTIC_WEIGHT=0.7
-KEYWORD_WEIGHT=0.3
-```
-
----
-
-**Key highlights:**
-
-1. **Custom Vector Database**: Built from scratch using NumPy for educational purposes and to avoid external dependencies
-2. **Hybrid Search**: Combines semantic (embeddings) and keyword (BM25) search for better retrieval
-3. **Intent Detection**: Saves API calls by classifying queries before retrieval
-4. **Hallucination Detection**: Verifies LLM answers against source documents
-5. **Citation System**: Enforces confidence thresholds and provides source attribution
-
----
-
-## Development
-
-### Project Structure
-```
-RAG-System/
-├── app/                    # Application code
-│   ├── main.py            # FastAPI app
-│   ├── rag_pipeline.py    # Main pipeline
-│   ├── vector_db.py       # Vector database
-│   ├── mistral_client.py  # Mistral API client
-│   ├── search.py          # Hybrid search
-│   ├── chunking.py        # Text chunking
-│   ├── models.py          # Pydantic models
-│   └── config.py          # Configuration
-├── ui/                    # Frontend
-│   └── index.html         # Chat interface
-├── vectordb/              # Vector DB storage (created at runtime)
-├── uploads/               # Uploaded PDFs (created at runtime)
-├── requirements.txt       # Python dependencies
-├── .env                   # Environment variables
-├── .gitignore            # Git ignore rules
-├── README.md             # This file
-└── DESIGN_DECISIONS.md   # Architecture documentation
-```
-
-### Running Tests
-```bash
-# Unit tests (if implemented)
-pytest tests/
-
-# Manual testing
-python -c "from app.vector_db import VectorDatabase; print('Vector DB OK')"
-python -c "from app.search import BM25; print('BM25 OK')"
-```
-
-### Code Quality
-```bash
-# Format code
-black app/
-
-# Lint
-flake8 app/
-
-# Type checking
-mypy app/
-```
-
----
-
 ## Future Improvements
 
-- Multi-modal support (images, tables, charts)
-- Conversation memory and context tracking
-- Advanced chunking strategies (semantic-aware)
-- Query routing based on intent
-- User feedback loop for continuous improvement
-- Production-grade vector database integration
-- Monitoring and logging
-- Docker containerization
-- Unit and integration tests
+### Planned Enhancements
+
+- **Multi-modal support**: Extract and reason about images, tables, charts in PDFs
+- **Conversation memory**: Track context across multiple queries in a session
+- **Advanced chunking**: Semantic-aware chunking that respects sections/topics
+- **Query routing**: Route queries to different retrieval strategies based on intent
+- **User feedback loop**: Learn from user ratings to improve retrieval
+- **Production-grade vector DB**: Integrate Pinecone/Weaviate for scale
+- **Monitoring & logging**: Track performance metrics and error rates
+- **Docker containerization**: Easy deployment with Docker Compose
+- **Test coverage**: Unit and integration tests with pytest
+
+### Known Limitations
+
+- **Scanned PDFs**: PyPDF2 cannot extract text from image-based PDFs (need OCR)
+- **Complex layouts**: Multi-column layouts and tables may not parse perfectly
+- **Scale**: Custom vector DB is suitable for <100k vectors; larger datasets need dedicated solution
+- **Context window**: Limited to ~4000 characters of context for LLM generation
+- **No conversation state**: Each query is independent; no multi-turn dialogue tracking
+
+For detailed design rationale and trade-offs, see [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md).
 
 ---
 
-## Implementation Considerations
-
-This section documents key design decisions and trade-offs made during implementation.
-
-### PDF Text Extraction
-
-**Library Choice: PyPDF2**
-
-We use PyPDF2 for text extraction from PDFs instead of more advanced OCR solutions. Here's why:
-
-**Advantages:**
-- **Speed**: Local processing is faster than API-based OCR
-- **Cost**: No API costs per page
-- **Simplicity**: Mature, well-documented library with minimal dependencies
-- **Sufficient for Digital PDFs**: Most modern PDFs contain extractable text
-
-**Limitations:**
-- **Scanned Documents**: Cannot extract text from image-based PDFs (scanned documents)
-- **Complex Layouts**: May struggle with multi-column layouts, tables, or unusual formatting
-- **Image Content**: Ignores charts, diagrams, and embedded images
-
-**When PyPDF2 Works Best:**
-- Digital PDFs (created from Word, LaTeX, etc.)
-- Standard single-column text documents
-- Reports, articles, research papers
-
-**Alternative Considered: Mistral OCR API**
-
-Mistral offers an OCR API that could handle scanned documents and complex layouts, but we chose PyPDF2 because:
-- Most use cases involve digital PDFs
-- Faster processing (no network latency)
-- No per-page API costs
-- Users can easily swap to OCR if needed
-
-**Future Enhancement**: Add automatic fallback to Mistral OCR when PyPDF2 extracts minimal text (indicating a scanned document).
-
----
-
-### Text Chunking Strategy
-
-**Approach: Sentence-Based Chunking**
-
-We chunk text by sentences using NLTK's sentence tokenizer rather than fixed-size chunking.
-
-**Why Sentence-Based?**
-
-1. **Semantic Coherence**: Each chunk is a complete thought
-   - Sentences have natural boundaries
-   - No mid-sentence splits that break meaning
-   - Example: "The revenue was $1.2M" stays together
-
-2. **Precise Citations**: Can point to exact sentences
-   - Users see the specific sentence that answered their question
-   - More useful than "characters 512-1024 of the document"
-
-3. **Better Embeddings**: Complete sentences encode meaning better
-   - Embedding models are trained on sentences
-   - Fragmented text produces lower-quality embeddings
-
-**Implementation Details:**
-
-```python
-# Using NLTK's sentence tokenizer
-from nltk.tokenize import sent_tokenize
-sentences = sent_tokenize(text)
-
-# Filter very short sentences (likely noise)
-if len(sentence) < 10:
-    continue  # Skip page numbers, headers, etc.
-```
-
-**Trade-offs:**
-
-| Aspect | Sentence-Based | Fixed-Size (512 tokens) |
-|--------|---------------|------------------------|
-| Semantic coherence | Perfect | Splits mid-sentence |
-| Chunk count | Variable (many chunks) | Predictable |
-| Citation precision | Exact sentences | Approximate ranges |
-| Edge cases | Handles abbreviations (Dr., U.S.A.) | Simple to implement |
-
-**Why Not Fixed-Size Chunking?**
-
-Fixed-size chunking (e.g., 512 tokens with 128 overlap) is common in RAG systems:
-
-```python
-# Fixed-size approach (not used)
-for i in range(0, len(tokens), chunk_size - overlap):
-    chunk = tokens[i:i + chunk_size]
-```
-
-**Problems with fixed-size:**
-- Splits sentences: "The Q4 revenue was $1.2 [CHUNK BREAK] million, up 15%..."
-- Overlap creates duplicate information (wastes embedding API calls)
-- Harder to provide meaningful citations
-
-**When Fixed-Size is Better:**
-- Very long documents where sentence-level creates too many chunks
-- Non-English text where sentence tokenization is poor
-- Need consistent chunk sizes for batch processing
-
-**Handling Edge Cases:**
-
-1. **Abbreviations**: NLTK handles "Dr. Smith", "U.S.A.", "etc." correctly
-2. **Short Sentences**: Filter out sentences < 10 characters (page numbers, headers)
-3. **Very Long Sentences**: Could split at commas/semicolons (not currently implemented)
-
-**Batching for Large Documents:**
-
-Large documents can generate hundreds of chunks, which can overwhelm the embedding API if sent all at once. We batch embeddings in groups of 100 to avoid API limits and timeouts:
-
-```python
-# Batch embeddings in groups of 100
-batch_size = 100
-embeddings = []
-for i in range(0, len(chunk_texts), batch_size):
-    batch = chunk_texts[i:i + batch_size]
-    batch_embeddings = await get_embeddings(batch)
-    embeddings.extend(batch_embeddings)
-```
-
-**Issue Encountered**: Without batching, large documents (50+ pages, 300+ chunks) could fail during ingestion due to API request size limits or timeouts. Batching ensures reliable processing of documents of any size while providing progress feedback.
-
-**Query Sensitivity Issue - Similarity Threshold Too Strict:**
-
-The RAG system was extremely sensitive to minor phrasing variations:
-- "How do I file taxes for cooperatives?" → No results (score: 0.578)
-- "How do I file taxes for a cooperative?" → Works (score: 0.786)
-
-**Root Cause**: The default similarity threshold of 0.7 was too strict. Queries with good semantic matches (scores 0.5-0.7) were being rejected.
-
-**Solution**:
-1. Lowered `similarity_threshold` from 0.7 to 0.5 in both `app/config.py` and `.env` file. This improves recall (finds more relevant results) while still filtering out irrelevant content. The 0.5-0.7 range typically indicates semantically related content with different phrasing (e.g., singular vs plural forms).
-2. Increased context window from 5 to 7 chunks for regular queries (10 for summaries). More context helps the LLM generate more complete and accurate answers.
+**Built with ❤️ by Darren Jian**
