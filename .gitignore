@@ -29,6 +29,7 @@ ENV/
 # IDE
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
@@ -59,3 +60,39 @@ Thumbs.db
 vectordb/
 *.pkl
 *.npy
+
+# Testing
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Databases (if added in future)
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Documentation builds
+docs/_build/
+site/
+
+# Personal notes
+COMMIT_PLAN.md
