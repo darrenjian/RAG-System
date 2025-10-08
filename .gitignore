@@ -29,7 +29,6 @@ ENV/
 # IDE
 .vscode/
 .idea/
-.claude/
 *.swp
 *.swo
 *~
@@ -45,8 +44,6 @@ uploads/
 images/
 *.md
 !README.md
-DESIGN_DECISIONS.md
-PIPELINE_FLOW.md
 
 # Logs
 *.log
@@ -93,6 +90,3 @@ dmypy.json
 # Documentation builds
 docs/_build/
 site/
-
-# Personal notes
-COMMIT_PLAN.md

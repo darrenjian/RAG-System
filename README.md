@@ -1,4 +1,4 @@
-# DocBot
+# DocBot: RAG Agent
 
 **DocBot** is a Retrieval-Augmented Generation (RAG) system for intelligent PDF document processing and question answering. Built with FastAPI and Mistral AI, it combines semantic search, keyword matching, and advanced LLM capabilities to provide accurate, cited answers from your documents.
 
@@ -14,8 +14,7 @@
 
 ## General Overview
 
-**Built by**: Darren Jian
-**Contact**: darrenjian28@gmail.com
+**Built by**: Darren Jian || **Contact**: darrenjian28@gmail.com
 
 ### Codebase Structure
 
