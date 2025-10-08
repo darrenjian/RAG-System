@@ -35,7 +35,6 @@ RAG-System/
 ├── uploads/                 # Uploaded PDFs (created at runtime)
 ├── requirements.txt         # Python dependencies
 ├── .env                     # Environment variables (API keys)
-└── DESIGN_DECISIONS.md      # Detailed architecture documentation
 ```
 
 ### Core Features
